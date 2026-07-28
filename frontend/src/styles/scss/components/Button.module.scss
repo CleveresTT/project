@@ -1,0 +1,16 @@
+@use "../variables" as *;
+
+.button {
+    padding: 8px 16px;
+    background-color: $blue;
+    border: 1px solid $blue;
+    border-radius: 4px;
+    color: $white;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover {
+        background-color: $blue_dark;
+        border-color: $blue_dark;
+    }
+}

@@ -1,0 +1,28 @@
+@use "../variables" as *;
+
+.pagination {
+    display: flex;
+    gap: 8px;
+    
+    & button {
+        padding: 4px;
+        border: none;
+        border-radius: 50%;
+        background: $blue;
+        color: $white;
+        width: 32px;
+        cursor: pointer;
+
+        &:hover {
+            background: $blue_dark;
+        }
+
+        &.active {
+            background: $green;
+        
+            &:hover {
+                background: $green_dark;
+            }
+        }
+    }
+}

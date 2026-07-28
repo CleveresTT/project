@@ -1,0 +1,40 @@
+@use "./variables" as *;
+@use "./mixins" as mixins;
+
+@layer layout {
+    .inner {
+        width: min(100%, 1080px);
+        margin: 0 auto;
+        padding: 0 16px;
+    }
+
+    .text-align-top {
+        vertical-align: top;
+        line-height: 1;
+    }
+
+    .svg_button_small {
+        border: none;
+        background: none;
+        padding: 0;
+        cursor: pointer;
+
+        width: 24px;
+        flex-shrink: 0;
+    }
+
+    #loader_fullscreen {
+        position: absolute;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        backdrop-filter: blur(4px);
+        display: none;
+
+        @include mixins.flexCenter();
+
+        img {
+            width: 10vh;
+        }
+    }
+}

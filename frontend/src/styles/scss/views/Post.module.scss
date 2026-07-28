@@ -1,0 +1,9 @@
+@use "../variables" as *;
+
+.post {
+    min-height: calc(250px - 32px - 20px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 30px;
+}
