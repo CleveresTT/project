@@ -109,6 +109,13 @@ jobs:
       - name: Build production bundle
         run: npm run build                        # Результат попадёт в ../dist/ 
 
+      # Шаг 11: Скачать собранный фронт, чтобы не проводить сборку на сервере
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: frontend-build
+          path: frontend/dist
+
   # ── 3. Деплой на VPS (только при пуше в master) ──────────────────
   deploy:
     name: Deploy to VPS
@@ -119,7 +126,14 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # Шаг 11: Настройка SSH-ключа
+      # Шаг 12: Загрузить собранный фронт
+      - name: Download frontend build artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: frontend-build
+          path: frontend/dist
+
+      # Шаг 13: Настройка SSH-ключа
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -128,7 +142,7 @@ jobs:
           # Чтобы не было запроса при первом подключении
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-      # Шаг 12: Вызов rsync
+      # Шаг 14: Вызов rsync
       - name: Rsync files to VPS
         run: |
           rsync -avzr --delete \
@@ -152,9 +166,4 @@ jobs:
             composer install --no-dev --optimize-autoloader --no-interaction
             php bin/console cache:clear
             php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
-            cd ../frontend && 
-            npm cache clean --force && 
-            rm -rf node_modules && 
-            npm ci && 
-            npm run build
             sudo systemctl reload php8.3-fpm
