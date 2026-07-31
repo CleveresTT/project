@@ -152,5 +152,9 @@ jobs:
             composer install --no-dev --optimize-autoloader --no-interaction
             php bin/console cache:clear
             php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
-            cd ../frontend && npm ci --loglevel verbose && npm run build
+            cd ../frontend && 
+            npm cache clean --force && 
+            rm -rf node_modules && 
+            npm ci && 
+            npm run build
             sudo systemctl reload php8.3-fpm
