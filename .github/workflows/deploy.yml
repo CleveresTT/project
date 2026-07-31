@@ -44,7 +44,7 @@ jobs:
 
     steps:
       # Шаг 1: Клонирование репозитория
-      - uses: actions/checkout@v4                 # action для загрузки кода
+      - uses: actions/checkout@v5                 # action для загрузки кода
 
       # Шаг 2: Установка PHP с нужными расширениями
       - name: Setup PHP 8.3
@@ -91,13 +91,13 @@ jobs:
         working-directory: ./frontend             # Все команды выполняются в папке frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      # Шаг 8: Установка Node.js (используем версию 20 LTS)
+      # Шаг 8: Установка Node.js (используем версию 24 LTS)
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 24
           cache: 'npm'                            # Автокэширование npm-пакетов
           cache-dependency-path: frontend/package-lock.json  # Путь к lock-файлу
 
@@ -117,7 +117,7 @@ jobs:
     if: github.ref == 'refs/heads/master'           # Только для ветки master
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Шаг 11: Синхронизация файлов через rsync
       - name: Deploy code to VPS
@@ -130,7 +130,7 @@ jobs:
           remote_user: ${{ secrets.SSH_USER }}      # Пользователь SSH 
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }} # Приватный SSH-ключ для подключения
           # Исключаем файлы, которые не нужно копировать или перезаписывать
-          exclude: ".git, .env, frontend/node_modules, backend/var"
+          exclude: "['.git', '.env', 'frontend/node_modules', 'backend/var']"
 
       # Шаг 12: Выполнение команд на сервере после синхронизации
       - name: Run post-deploy commands via SSH
