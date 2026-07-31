@@ -1,0 +1,149 @@
+# ─── Имя пайплайна (отображается на GitHub) ─────────────────────
+name: CI/CD
+
+# ─── События, запускающие пайплайн ──────────────────────────────
+on:
+  # При пуше в веткy master (и при создании PR)
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+# ─── Глобальные переменные окружения для всех job'ов ────────────
+env:
+  APP_ENV: test                                  # Symfony будет работать в тестовом режиме
+  DATABASE_URL: "${{ secrets.DATABASE_URL }}"
+  # Строка подключения к тестовой БД (учётные данные совпадают с сервисным контейнером PostgreSQL)
+
+# ─── ОПИСАНИЕ ОТДЕЛЬНЫХ ЗАДАЧ (JOBS) ────────────────────────────
+jobs:
+
+  # ── 1. Тестирование бэкенда (Symfony + PHPUnit) ────────────────
+  backend:
+    name: Backend tests (PHP 8.3)                # Имя, видимое в UI GitHub
+    runs-on: ubuntu-latest                       # Виртуальная машина с Ubuntu
+    defaults:
+      run:
+        working-directory: ./backend             # Все команды выполняются в папке backend
+
+    # Контейнер PostgreSQL, запускаемый параллельно с шагами
+    services:
+      postgres:
+        image: postgres:18-alpine                # Лёгкий образ PostgreSQL 18
+        env:
+          POSTGRES_DB: test_db                   # Имя тестовой базы
+          POSTGRES_USER: symfony                 # Пользователь
+          POSTGRES_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}            # Пароль
+        ports:
+          - 5432:5432                            # Проброс порта на хост
+        options: >-                              # Проверка готовности сервиса
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      # Шаг 1: Клонирование репозитория
+      - uses: actions/checkout@v4                 # action для загрузки кода
+
+      # Шаг 2: Установка PHP с нужными расширениями
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2           # Установщик PHP
+        with:
+          php-version: '8.3'                      # Версия PHP
+          extensions: pgsql, intl, xml, mbstring, curl, zip  # Расширения Symfony + PostgreSQL
+          tools: composer:v2                      # Composer последней версии
+
+      # Шаг 3: Кэширование Composer-зависимостей для ускорения
+      - name: Cache Composer packages
+        uses: actions/cache@v4                    # action для кэширования
+        with:
+          path: vendor                            # Что кэшируем
+          key: ${{ runner.os }}-php-8.3-composer-${{ hashFiles('composer.lock') }}
+          # Ключ зависит от ОС, версии PHP и хеша composer.lock
+          restore-keys: |
+            ${{ runner.os }}-php-8.3-composer-    # Восстановление похожих кэшей
+
+      # Шаг 4: Установка PHP-зависимостей
+      - name: Install PHP dependencies
+        run: composer install --no-progress --no-interaction --prefer-dist --optimize-autoloader
+
+      # Шаг 5: Создание схемы тестовой БД и накат миграций
+      - name: Setup test database
+        run: |
+          php bin/console doctrine:database:create --if-not-exists --no-interaction
+          php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
+
+      # Шаг 6: Очистка кэша для тестового окружения
+      - name: Clear test cache
+        run: php bin/console cache:clear --env=test
+
+      # Шаг 7: Запуск тестов PHPUnit
+      - name: Run PHPUnit
+        run: vendor/bin/phpunit
+
+  # ── 2. Сборка фронтенда (Vue + Vite) ────────────
+  frontend:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend             # Все команды выполняются в папке frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Шаг 8: Установка Node.js (используем версию 20 LTS)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'                            # Автокэширование npm-пакетов
+          cache-dependency-path: frontend/package-lock.json  # Путь к lock-файлу
+
+      # Шаг 9: Установка JavaScript-зависимостей
+      - name: Install JS dependencies
+        run: npm ci                               # Чистая установка по lock-файлу
+
+      # Шаг 10: Проверка production-сборки (сразу выявит ошибки)
+      - name: Build production bundle
+        run: npm run build                        # Результат попадёт в ../dist/ 
+
+  # ── 3. Деплой на VPS (только при пуше в master) ──────────────────
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: [ backend, frontend ]                    # Деплой запускается только после успешных тестов
+    if: github.ref == 'refs/heads/master'           # Только для ветки master
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Шаг 11: Синхронизация файлов через rsync
+      - name: Deploy code to VPS
+        uses: burnett01/rsync-deployments@7.0.0     # Готовый action для rsync
+        with:
+          switches: -avzr --delete                  # Архивный режим, сжатие, удаление лишних файлов
+          path: /                                   # Исходная папка (корень репозитория)
+          remote_path: ${{ secrets.DEPLOY_PATH }}   # Путь на сервере
+          remote_host: ${{ secrets.SSH_HOST }}      # IP или домен сервера (хранится в секретах GitHub)
+          remote_user: ${{ secrets.SSH_USER }}      # Пользователь SSH 
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }} # Приватный SSH-ключ для подключения
+          # Исключаем файлы, которые не нужно копировать или перезаписывать
+          exclude: ".git, .env, frontend/node_modules, backend/var"
+
+      # Шаг 12: Выполнение команд на сервере после синхронизации
+      - name: Run post-deploy commands via SSH
+        uses: appleboy/ssh-action@v1.0.3          # Действие для выполнения команд по SSH
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # Команды, выполняемые на сервере
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}/backend
+            composer install --no-dev --optimize-autoloader --no-interaction
+            php bin/console cache:clear
+            php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
+            cd ../frontend && npm ci && npm run build
+            sudo systemctl reload php8.3-fpm
