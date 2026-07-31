@@ -56,7 +56,7 @@ jobs:
 
       # Шаг 3: Кэширование Composer-зависимостей для ускорения
       - name: Cache Composer packages
-        uses: actions/cache@v4                    # action для кэширования
+        uses: actions/cache@v5                    # action для кэширования
         with:
           path: vendor                            # Что кэшируем
           key: ${{ runner.os }}-php-8.3-composer-${{ hashFiles('composer.lock') }}
@@ -130,7 +130,7 @@ jobs:
           remote_user: ${{ secrets.SSH_USER }}      # Пользователь SSH 
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }} # Приватный SSH-ключ для подключения
           # Исключаем файлы, которые не нужно копировать или перезаписывать
-          exclude: "['.git', '.env', 'frontend/node_modules', 'backend/var']"
+          exclude: ['.git', '.env', 'frontend/node_modules', 'backend/var']
 
       # Шаг 12: Выполнение команд на сервере после синхронизации
       - name: Run post-deploy commands via SSH
