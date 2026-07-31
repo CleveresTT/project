@@ -130,7 +130,7 @@ jobs:
           remote_user: ${{ secrets.SSH_USER }}      # Пользователь SSH 
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }} # Приватный SSH-ключ для подключения
           # Исключаем файлы, которые не нужно копировать или перезаписывать
-          exclude: .git, .env, frontend/node_modules, backend/var
+          exclude: .git, .env, .env.local, frontend/node_modules, backend/var
 
       # Шаг 12: Выполнение команд на сервере после синхронизации
       - name: Run post-deploy commands via SSH
