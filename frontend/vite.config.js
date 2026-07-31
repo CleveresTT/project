@@ -8,14 +8,5 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     }
-  },
-  esbuild: {
-    legalComments: 'none',
-  },
-  build: {
-    minify: 'esbuild', 
-    target: 'es2015',
-    cssMinify: 'esbuild',
-    sourcemap: false,
-  },
+  }
 })
