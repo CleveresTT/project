@@ -119,20 +119,27 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # Шаг 11: Синхронизация файлов через rsync
-      - name: Deploy code to VPS
-        uses: burnett01/rsync-deployments@7.0.0     # Готовый action для rsync
-        with:
-          switches: -avzr --delete                  # Архивный режим, сжатие, удаление лишних файлов
-          path: /                                   # Исходная папка (корень репозитория)
-          remote_path: ${{ secrets.DEPLOY_PATH }}   # Путь на сервере
-          remote_host: ${{ secrets.SSH_HOST }}      # IP или домен сервера (хранится в секретах GitHub)
-          remote_user: ${{ secrets.SSH_USER }}      # Пользователь SSH 
-          remote_key: ${{ secrets.SSH_PRIVATE_KEY }} # Приватный SSH-ключ для подключения
-          # Исключаем файлы, которые не нужно копировать или перезаписывать
-          exclude: ".git,frontend/node_modules,backend/.env.local,backend/var"
+      # Шаг 11: Настройка SSH-ключа
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Чтобы не было запроса при первом подключении
+          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
-      # Шаг 12: Выполнение команд на сервере после синхронизации
+      # Шаг 12: Вызов rsync
+      - name: Rsync files to VPS
+        run: |
+          rsync -avzr --delete \
+            --exclude='.git' \
+            --exclude='frontend/node_modules' \
+            --exclude='backend/.env.local' \
+            --exclude='backend/var' \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:{{ secrets.DEPLOY_PATH }}/
+
+      # Шаг 13: Выполнение команд на сервере после синхронизации
       - name: Run post-deploy commands via SSH
         uses: appleboy/ssh-action@v1.0.3          # Действие для выполнения команд по SSH
         with:
