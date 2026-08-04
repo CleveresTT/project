@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/18/main
+    networks:
+      - appnet
+
+  backend:
+    image: ghcr.io/cleverestt/backend-backend:latest
+    environment:
+      APP_ENV: prod
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      - db
+    networks:
+      - appnet
+
+  frontend:
+    image: ghcr.io/cleverestt/frontend-backend:latest
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - appnet
+
+networks:
+  appnet:
+
+volumes:
+  pgdata:
