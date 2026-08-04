@@ -11,7 +11,7 @@ services:
       - appnet
 
   backend:
-    image: ghcr.io/cleverestt/backend-backend:latest
+    image: ghcr.io/cleverestt/project-backend:latest
     environment:
       APP_ENV: prod
       DATABASE_URL: ${DATABASE_URL}
@@ -21,7 +21,7 @@ services:
       - appnet
 
   frontend:
-    image: ghcr.io/cleverestt/frontend-backend:latest
+    image: ghcr.io/cleverestt/project-frontend:latest
     ports:
       - "8080:80"
     depends_on:
