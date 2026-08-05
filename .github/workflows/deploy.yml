@@ -121,7 +121,5 @@ jobs:
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
             # Очистка кеша сборки
             docker builder prune -a -f
-            # Очистка старых томов
-            docker volume prune -f
             # Очистка старых образов
             docker image prune -af
