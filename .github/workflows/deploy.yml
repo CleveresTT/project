@@ -102,6 +102,19 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
+
+      - name: Convert backend image case
+        id: backend_image_case
+        uses: ASzc/change-string-case-action@v7
+        with:
+          string: ${{ env.BACKEND_IMAGE }}
+
+      - name: Convert frontend image case
+        id: frontend_image_case
+        uses: ASzc/change-string-case-action@v7
+        with:
+          string: ${{ env.FRONTEND_IMAGE }}
+
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -116,9 +129,12 @@ jobs:
             # Полная очистка для освобождения оперативки
             docker system prune -a -f
             # Скачиваем последние версии образов
-            docker compose -f docker-compose.prod.yml pull --parallel=false
+            echo "=== Pulling backend ==="
+            docker pull ${{ steps.backend_image_case.outputs.lowercase }}:master
+            echo "=== Pulling frontend ==="
+            docker pull ${{ steps.frontend_image_case.outputs.lowercase }}:master
             # Перезапускаем сервисы
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans --pull=never
             # Очистка кеша сборки
             docker builder prune -a -f
             # Очистка старых образов
