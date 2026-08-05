@@ -116,8 +116,7 @@ jobs:
             # Полная очистка для освобождения оперативки
             docker system prune -a -f
             # Скачиваем последние версии образов
-            docker pull ${{ env.BACKEND_IMAGE }}:master
-            docker pull ${{ env.FRONTEND_IMAGE }}:master
+            docker compose -f docker-compose.prod.yml pull --parallel=false
             # Перезапускаем сервисы
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
             # Очистка кеша сборки
