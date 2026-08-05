@@ -104,16 +104,16 @@ jobs:
     steps:
 
       - name: Convert backend image case
-        id: backend_image_case
-        uses: ASzc/change-string-case-action@v7
-        with:
-          string: ${{ env.BACKEND_IMAGE }}
+        run: |
+          echo "BACKEND_IMAGE_LOWERCASE=${MY_INPUT,,}" >> ${GITHUB_ENV}
+        env:
+          MY_INPUT: ${{ env.BACKEND_IMAGE }}
 
       - name: Convert frontend image case
-        id: frontend_image_case
-        uses: ASzc/change-string-case-action@v7
-        with:
-          string: ${{ env.FRONTEND_IMAGE }}
+        run: |
+          echo "FRONTEND_IMAGE_LOWERCASE=${MY_INPUT,,}" >> ${GITHUB_ENV}
+        env:
+          MY_INPUT: ${{ env.FRONTEND_IMAGE }}
 
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v1.0.0
@@ -130,9 +130,9 @@ jobs:
             docker system prune -a -f
             # Скачиваем последние версии образов
             echo "=== Pulling backend ==="
-            docker pull ${{ steps.backend_image_case.outputs.lowercase }}:master
+            docker pull ${{ env.BACKEND_IMAGE_LOWERCASE }}:master
             echo "=== Pulling frontend ==="
-            docker pull ${{ steps.frontend_image_case.outputs.lowercase }}:master
+            docker pull ${{ env.FRONTEND_IMAGE_LOWERCASE }}:master
             # Перезапускаем сервисы
             docker compose -f docker-compose.prod.yml up -d --remove-orphans --pull=never
             # Очистка кеша сборки
