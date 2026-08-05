@@ -96,14 +96,14 @@ jobs:
           tags: ${{ steps.meta_frontend.outputs.tags }}
           labels: ${{ steps.meta_frontend.outputs.labels }}
 
-  # Деплой на удалённый сервер (только для push в master или тегов)
-  deploy:
+  # Пул образов с реестра на удаленный сервер, занимает очень много времени
+  pull:
     needs: build-and-push
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     steps:
 
+      #Перевести ссылки в ловеркейс
       - name: Convert backend image case
         run: |
           echo "BACKEND_IMAGE_LOWERCASE=${MY_INPUT,,}" >> ${GITHUB_ENV}
@@ -116,13 +116,12 @@ jobs:
         env:
           MY_INPUT: ${{ env.FRONTEND_IMAGE }}
 
-      - name: Deploy to server via SSH
+      - name: Pull to server via SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          timeout: 1800s
           script: |
             cd /opt/project
             git pull origin master
@@ -135,6 +134,21 @@ jobs:
             docker pull ${{ env.BACKEND_IMAGE_LOWERCASE }}:master
             echo "=== Pulling frontend ==="
             docker pull ${{ env.FRONTEND_IMAGE_LOWERCASE }}:master
+
+# Деплой на удалённый сервер
+  deploy:
+    needs: pull
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/project
             # Перезапускаем сервисы
             echo "=== Compose ==="
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
