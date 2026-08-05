@@ -96,9 +96,32 @@ jobs:
           tags: ${{ steps.meta_frontend.outputs.tags }}
           labels: ${{ steps.meta_frontend.outputs.labels }}
 
+
+  # Пул psql на удаленный сервер, занимает много времени
+  pull-psql:
+    needs: build-and-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull psql to server via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/project
+            git pull origin master
+            # Остановить старые контейнеры 
+            docker compose -f docker-compose.prod.yml down
+            # Полная очистка для освобождения оперативки
+            docker system prune -a -f
+            echo "=== Pulling psql ==="
+            docker pull postgres:18-alpine
+
   # Пул образов с реестра на удаленный сервер, занимает очень много времени
   pull:
-    needs: build-and-push
+    needs: pull-psql
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
@@ -124,12 +147,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /opt/project
-            git pull origin master
-            # Остановить старые контейнеры 
-            docker compose -f docker-compose.prod.yml down
-            # Полная очистка для освобождения оперативки
-            docker system prune -a -f
-            # Скачиваем последние версии образов
             echo "=== Pulling backend ==="
             docker pull ${{ env.BACKEND_IMAGE_LOWERCASE }}:master
             echo "=== Pulling frontend ==="
