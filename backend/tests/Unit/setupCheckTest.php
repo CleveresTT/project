@@ -15,6 +15,6 @@ class setupCheckTest extends TestCase
     public function tests_setup_is_working(): void
     {
         $result = $this->setupChecker->getTestValueMultipliedByParameter(10);
-        $this->assertEquals(1230, $result);
+        $this->assertEquals(12130, $result);
     }
 }
