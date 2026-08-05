@@ -134,7 +134,8 @@ jobs:
             echo "=== Pulling frontend ==="
             docker pull ${{ env.FRONTEND_IMAGE_LOWERCASE }}:master
             # Перезапускаем сервисы
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans --pull=never
+            echo "=== Compose ==="
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
             # Очистка кеша сборки
             docker builder prune -a -f
             # Очистка старых образов
