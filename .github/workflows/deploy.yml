@@ -111,9 +111,17 @@ jobs:
           script: |
             cd /opt/project
             git pull origin master
+            # Остановить старые контейнеры 
+            docker compose -f docker-compose.prod.yml down
+            # Полная очистка для освобождения оперативки
+            docker system prune -a -f
             # Скачиваем последние версии образов
             docker compose -f docker-compose.prod.yml pull
             # Перезапускаем сервисы
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            # Очистка кеша сборки
+            docker builder prune -a -f
+            # Очистка старых томов
+            docker volume prune -f
             # Очистка старых образов
             docker image prune -af
