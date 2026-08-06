@@ -22,7 +22,7 @@
         </template>
 
         <template #default>
-          <div class="mb-20">Проверка работы watch и emit. Значение счетчика в родительском компоненте13523: {{ counterValue }}</div>
+          <div class="mb-20">Проверка работы watch и emit. Значение счетчика в родительском компоненте: {{ counterValue }}</div>
           <Counter @updateCounter="updateCounter"></Counter>
         </template>
 

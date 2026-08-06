@@ -66,14 +66,14 @@ class PostsController extends AbstractController{
         $id = $request->request->get('id');
         $code = 204;
 
-        // if ($id)
-        // {
-        //     $post = $repository->find($id);
-        //     $entityManager->remove($post);
-        //     $entityManager->flush();
+        if ($id)
+        {
+            $post = $repository->find($id);
+            $entityManager->remove($post);
+            $entityManager->flush();
 
-        //     $code = 201;
-        // }
+            $code = 201;
+        }
 
         return $this->makeJsonResponse($repository->findAll(), $code);
     }
