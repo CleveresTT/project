@@ -97,8 +97,8 @@ jobs:
           labels: ${{ steps.meta_frontend.outputs.labels }}
 
   # Пул образов с реестра на удаленный сервер, занимает очень много времени
-  deploy:
-    needs: build-and-push
+  pull:
+    needs: pull-psql
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
