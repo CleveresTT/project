@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - master       # деплой при пуше в master
-    tags:
-      - 'v*'       # или при создании тега версии
   pull_request:
     branches:
       - master       # проверка сборки в PR
@@ -56,7 +54,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}   # встроенный токен, работает для пакетов
+          password: ${{ secrets.GITHUB_TOKEN }} 
 
       - name: Extract metadata (tags, labels) for backend
         id: meta_backend
@@ -96,14 +94,13 @@ jobs:
           tags: ${{ steps.meta_frontend.outputs.tags }}
           labels: ${{ steps.meta_frontend.outputs.labels }}
 
-  # Пул образов с реестра на удаленный сервер, занимает очень много времени
   deploy:
     needs: build-and-push
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
 
-      #Перевести ссылки в ловеркейс
+      # Перевести ссылки в ловеркейс
       - name: Convert backend image case
         run: |
           echo "BACKEND_IMAGE_LOWERCASE=${MY_INPUT,,}" >> ${GITHUB_ENV}
@@ -132,7 +129,7 @@ jobs:
             # Предварительный пулл для экономии оперативки
             echo "=== Pull ==="
             docker compose -f docker-compose.prod.yml pull
-            # Перезапускаем сервисы
+            # Перезапускаем сервисы отдельно, не допустить высокого пика потребления оперативки
             echo "=== Compose ==="
             docker compose -f docker-compose.prod.yml up -d db
             docker compose -f docker-compose.prod.yml up -d backend

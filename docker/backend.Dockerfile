@@ -24,12 +24,11 @@ RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 # Копируем весь код бэкенда
 COPY backend/ ./
 
+# Пересобирать файлы автозагрузки классов для прода
 RUN composer dump-autoload --optimize --no-dev
 
 # Копируем entrypoint-скрипт и делаем его исполняемым
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
-
-EXPOSE 80
 
 CMD ["/usr/local/bin/entrypoint.sh"]

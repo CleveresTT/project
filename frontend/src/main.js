@@ -2,10 +2,11 @@ import { createApp } from 'vue'
 
 import router from '@/router/index'
 import pinia from '@/pinia/index'
-import apiClient from '@/services/api'
 
 import './styles/style.scss'
 import App from './App.vue'
+
+import apiClient from '@/services/api'
 
 apiClient.interceptors.request.use((config) => {
     document.getElementById('loader_fullscreen').style.display = 'flex';
