@@ -122,6 +122,10 @@ jobs:
           script: |
             cd /opt/project
             git pull origin master
+            # Остановить старые контейнеры 
+            docker compose -f docker-compose.prod.yml down
+            # Полная очистка для освобождения оперативки
+            docker system prune -a -f
             # Предварительный пулл для экономии оперативки
             echo "=== Pull ==="
             docker compose -f docker-compose.prod.yml pull
