@@ -14,21 +14,12 @@ use \Datetime;
 
 class PostsController extends AbstractController{
 
-    private function makeJsonResponse ($response, $code = 200) : Response
-    {
-        return $this->json(
-            $response,
-            $code,
-            $this->getParameter('kernel.environment') == 'dev' ? ['Access-Control-Allow-Origin'=> 'http://localhost:5173'] : []
-        );
-    }
-
     #[Route('api/posts/get_posts', name: 'get_posts')]
     public function GetPosts(PostsRepository $repository): Response
     {
         $response = $repository->findAll();
 
-        return $this->makeJsonResponse($response);
+        return $this->json($response);
     }
 
     #[Route('api/posts/get_post/{id}', name: 'get_post')]
@@ -37,7 +28,7 @@ class PostsController extends AbstractController{
         $response = $repository->findOneBy(['id' => $id]) ?? '';
         $code = $response ? 200 : 204;
 
-        return $this->makeJsonResponse($response, $code);
+        return $this->json($response, $code);
     }
 
     #[Route('api/posts/make_post', name: 'make_post')]
@@ -57,7 +48,7 @@ class PostsController extends AbstractController{
             $entityManager->flush();
         }
 
-        return $this->makeJsonResponse($repository->findAll(), $code);
+        return $this->json($repository->findAll(), $code);
     }
 
     #[Route('api/posts/delete_post', name: 'delete_post')]
@@ -75,6 +66,6 @@ class PostsController extends AbstractController{
             $code = 201;
         }
 
-        return $this->makeJsonResponse($repository->findAll(), $code);
+        return $this->json($repository->findAll(), $code);
     }
 }
